@@ -1,5 +1,6 @@
 using NutriDish.Components;
 using NutriDish.Models;
+using NutriDish.Services;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -16,6 +17,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 //================================================================================
+
+// Services
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 var app = builder.Build();
 

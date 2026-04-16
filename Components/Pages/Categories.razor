@@ -1,0 +1,113 @@
+@page "/categories"
+@using NutriDish.Models
+@using NutriDish.Services
+@rendermode InteractiveServer
+@inject ICategoryService CategoryService
+
+<h3>Gestion des Catégories</h3>
+
+<!-- Ajout -->
+<div class="mb-3">
+    <input class="form-control" placeholder="Nouvelle catégorie" @bind="newCategoryName" />
+    <button class="btn btn-primary mt-2" @onclick="AddCategory">Ajouter</button>
+</div>
+
+<!-- Liste -->
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var category in categories)
+        {
+            <tr>
+                <td>@category.Name</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteCategory(category.Id)">
+                        Supprimer
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div class="d-flex justify-content-between">
+    <button class="btn btn-secondary" @onclick="PreviousPage" disabled="@(pageNumber == 1)">
+        ⬅️ Précédent
+    </button>
+
+    <span>Page @pageNumber</span>
+
+    <button class="btn btn-secondary" @onclick="NextPage" disabled="@(pageNumber >= totalPages)">
+        Suivant ➡️
+    </button>
+</div>
+
+@code {
+    private List<Category> categories = new();
+    private string newCategoryName = "";
+
+    private int pageNumber = 1;
+    private int pageSize = 5;
+    private int totalCount = 0;
+    private int totalPages => (int)Math.Ceiling((double)totalCount / pageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+    }
+
+    private async Task LoadCategories()
+    {
+        var result = await CategoryService.GetPagedCategoriesAsync(pageNumber, pageSize);
+        categories = result.Categories;
+        totalCount = result.TotalCount;
+    }
+
+    private async Task AddCategory()
+    {
+        if (string.IsNullOrWhiteSpace(newCategoryName))
+            return;
+
+        try
+        {
+            await CategoryService.AddCategoryAsync(new Category { Name = newCategoryName });
+            newCategoryName = "";
+            await LoadCategories();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    private async Task DeleteCategory(int id)
+    {
+        await CategoryService.DeleteCategoryAsync(id);
+        await LoadCategories();
+    }
+
+    private async Task NextPage()
+    {
+        if (pageNumber < totalPages)
+        {
+            pageNumber++;
+            await LoadCategories();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (pageNumber > 1)
+        {
+            pageNumber--;
+            await LoadCategories();
+        }
+    }
+
+}
