@@ -1,7 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+namespace NutriDish.Models;
+
 
 public class Unit
 {
+    [Key]
     public int Id { get; set; }
 
     [Required(ErrorMessage = "Le nom de l'unité est obligatoire")]

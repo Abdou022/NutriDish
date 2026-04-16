@@ -1,10 +1,21 @@
 using NutriDish.Components;
+using NutriDish.Models;
+using Microsoft.EntityFrameworkCore;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+
+// Get the connection string from appsettings.json and configure the DbContext to use SQLite
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// This registers the AppDbContext with the dependency injection system, so it can be injected into components and other services that need to access the database
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(connectionString));
+//================================================================================
 
 var app = builder.Build();
 

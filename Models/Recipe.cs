@@ -1,8 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+namespace NutriDish.Models;
+
 
 public class Recipe
 {
+    [Key]
     public int Id { get; set; }
 
     [Required(ErrorMessage = "Le nom de la recette est obligatoire")]

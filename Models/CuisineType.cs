@@ -1,7 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+namespace NutriDish.Models;
+
 
 public class CuisineType
 {
+    [Key]
     public int Id { get; set; }
 
     [Required(ErrorMessage = "Le type de cuisine est obligatoire")]

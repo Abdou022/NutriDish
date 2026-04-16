@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+namespace NutriDish.Models;
+
 
 public class RecipeIngredient
 {
