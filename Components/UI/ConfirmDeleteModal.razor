@@ -1,0 +1,28 @@
+@using NutriDish.Components.UI
+
+<ModalDialog @ref="modal" Id="confirm-delete-modal" Title="Confirmation de suppression">
+    <ChildContent>
+        <p>Supprimer <strong>@ItemName</strong> ?</p>
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="alert alert-danger py-2">@ErrorMessage</div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn btn-secondary" @onclick="modal!.Close">Annuler</button>
+        <button class="btn btn-danger" @onclick="HandleConfirm">Supprimer</button>
+    </FooterContent>
+</ModalDialog>
+
+@code {
+    private ModalDialog? modal;
+
+    [Parameter] public string ItemName { get; set; } = "";
+    [Parameter] public string ErrorMessage { get; set; } = "";
+    [Parameter] public EventCallback OnConfirm { get; set; }
+
+    public async Task Open() => await modal!.Open();
+    public async Task Close() => await modal!.Close();
+
+    private async Task HandleConfirm() => await OnConfirm.InvokeAsync();
+}

@@ -1,0 +1,276 @@
+@page "/recipes"
+@using NutriDish.Models
+@using NutriDish.Services
+@using NutriDish.Components.UI
+@using Microsoft.AspNetCore.Components.Forms
+@rendermode InteractiveServer
+@inject IRecipeService RecipeService
+@inject IWebHostEnvironment Env
+
+<!-- Modals -->
+<RecipeFormModal @ref="addModal"
+                 Id="add-recipe-modal"
+                 Title="Nouvelle recette"
+                 SubmitText="Créer"
+                 Recipe="newRecipe"
+                 RecipeIngredients="newIngredients"
+                 ErrorMessage="@addError"
+                 OnSubmit="SubmitAdd" />
+
+<RecipeFormModal @ref="editModal"
+                 Id="edit-recipe-modal"
+                 Title="Modifier la recette"
+                 SubmitText="Sauvegarder"
+                 Recipe="editingRecipe"
+                 RecipeIngredients="editingIngredients"
+                 ErrorMessage="@editError"
+                 OnSubmit="SubmitEdit" />
+
+<ConfirmDeleteModal @ref="deleteModal"
+                    ItemName="@(deletingRecipe?.Name ?? "")"
+                    ErrorMessage="@deleteError"
+                    OnConfirm="SubmitDelete" />
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="m-0">Gestion des Recettes</h3>
+    <button class="btn btn-success" @onclick="OpenAddModal">
+        + Nouvelle recette
+    </button>
+</div>
+
+<!-- DataGrid -->
+<RadzenDataGrid Data="@recipes"
+                TItem="Recipe"
+                AllowFiltering="true"
+                FilterMode="FilterMode.Simple"
+                AllowSorting="true"
+                AllowPaging="true"
+                PageSize="10"
+                PagerHorizontalAlign="HorizontalAlign.Left"
+                ShowPagingSummary="true"
+                AllowColumnResize="true"
+                AllowAlternatingRows="true"
+                EmptyText="Aucune recette trouvée">
+    <Columns>
+        <RadzenDataGridColumn TItem="Recipe"
+                              Property="@nameof(Recipe.Id)"
+                              Title="ID"
+                              Width="70px"
+                              TextAlign="TextAlign.Center"
+                              Filterable="false"
+                              Sortable="false" />
+        <RadzenDataGridColumn TItem="Recipe"
+                              Title="Image"
+                              Width="80px"
+                              Sortable="false"
+                              Filterable="false"
+                              TextAlign="TextAlign.Center">
+            <Template Context="recipe">
+                @if (!string.IsNullOrEmpty(recipe.ImageUrl))
+                {
+                    <img src="@recipe.ImageUrl"
+                         alt="@recipe.Name"
+                         style="width:48px;height:48px;object-fit:cover;border-radius:6px;" />
+                }
+                else
+                {
+                    <span style="font-size:1.5rem">🍽️</span>
+                }
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Recipe"
+                              Property="@nameof(Recipe.Name)"
+                              Title="Nom" />
+        <RadzenDataGridColumn TItem="Recipe"
+                              Property="Category.Name"
+                              Title="Catégorie"
+                              Width="130px" />
+        <RadzenDataGridColumn TItem="Recipe"
+                              Property="CuisineType.Name"
+                              Title="Cuisine"
+                              Width="130px" />
+        <RadzenDataGridColumn TItem="Recipe"
+                              Property="@nameof(Recipe.NumberOfPersons)"
+                              Title="Personnes"
+                              Width="100px"
+                              TextAlign="TextAlign.Center" />
+        <RadzenDataGridColumn TItem="Recipe"
+                              Title="Ingrédients"
+                              Width="110px"
+                              Sortable="false"
+                              Filterable="false"
+                              TextAlign="TextAlign.Center">
+            <Template Context="recipe">
+                <span class="badge bg-secondary">
+                    @(recipe.RecipeIngredients?.Count ?? 0) ingrédients
+                </span>
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Recipe"
+                              Title="Actions"
+                              Sortable="false"
+                              Filterable="false"
+                              Width="130px"
+                              TextAlign="TextAlign.Center">
+            <Template Context="recipe">
+                <button class="btn btn-warning btn-sm me-1"
+                        @onclick="() => OpenEditModal(recipe)">
+                    ✏️
+                </button>
+                <button class="btn btn-danger btn-sm"
+                        @onclick="() => OpenDeleteModal(recipe)">
+                    🗑️
+                </button>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    private List<Recipe> recipes = new();
+
+    private RecipeFormModal? addModal;
+    private RecipeFormModal? editModal;
+    private ConfirmDeleteModal? deleteModal;
+
+    private Recipe newRecipe = new();
+    private List<RecipeIngredient> newIngredients = new();
+    private string addError = "";
+
+    private Recipe editingRecipe = new();
+    private List<RecipeIngredient> editingIngredients = new();
+    private string editError = "";
+
+    private Recipe? deletingRecipe;
+    private string deleteError = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRecipes();
+    }
+
+    private async Task LoadRecipes()
+    {
+        recipes = await RecipeService.GetAllRecipesAsync();
+    }
+
+    // ➕ Add
+    private async Task OpenAddModal()
+    {
+        newRecipe = new Recipe();
+        newIngredients = new List<RecipeIngredient>();
+        addError = "";
+        await addModal!.Open();
+    }
+
+    private async Task SubmitAdd((Recipe recipe, List<RecipeIngredient> ingredients, IBrowserFile? image) data)
+    {
+        addError = "";
+        if (string.IsNullOrWhiteSpace(data.recipe.Name))     { addError = "Le nom est obligatoire."; return; }
+        if (data.recipe.CategoryId == 0)                      { addError = "Veuillez choisir une catégorie."; return; }
+        if (data.recipe.CuisineTypeId == 0)                   { addError = "Veuillez choisir un type de cuisine."; return; }
+        if (string.IsNullOrWhiteSpace(data.recipe.CookingMethod)) { addError = "La méthode de préparation est obligatoire."; return; }
+
+        try
+        {
+            if (data.image != null)
+                data.recipe.ImageUrl = await SaveImageAsync(data.image);
+
+            await RecipeService.AddRecipeAsync(data.recipe, data.ingredients);
+            await addModal!.Close();
+            await LoadRecipes();
+        }
+        catch (Exception ex)
+        {
+            addError = ex.Message;
+        }
+    }
+
+    // ✏️ Edit
+    private async Task OpenEditModal(Recipe recipe)
+    {
+        editingRecipe = new Recipe
+        {
+            Id = recipe.Id,
+            Name = recipe.Name,
+            NumberOfPersons = recipe.NumberOfPersons,
+            CookingMethod = recipe.CookingMethod,
+            ImageUrl = recipe.ImageUrl,
+            CategoryId = recipe.CategoryId,
+            CuisineTypeId = recipe.CuisineTypeId
+        };
+
+        editingIngredients = recipe.RecipeIngredients?.Select(ri => new RecipeIngredient
+        {
+            IngredientId = ri.IngredientId,
+            Quantity = ri.Quantity
+        }).ToList() ?? new();
+
+        editError = "";
+        await editModal!.Open();
+    }
+
+    private async Task SubmitEdit((Recipe recipe, List<RecipeIngredient> ingredients, IBrowserFile? image) data)
+    {
+        editError = "";
+        if (string.IsNullOrWhiteSpace(data.recipe.Name))     { editError = "Le nom est obligatoire."; return; }
+        if (data.recipe.CategoryId == 0)                      { editError = "Veuillez choisir une catégorie."; return; }
+        if (data.recipe.CuisineTypeId == 0)                   { editError = "Veuillez choisir un type de cuisine."; return; }
+        if (string.IsNullOrWhiteSpace(data.recipe.CookingMethod)) { editError = "La méthode de préparation est obligatoire."; return; }
+
+        try
+        {
+            if (data.image != null)
+                data.recipe.ImageUrl = await SaveImageAsync(data.image);
+
+            await RecipeService.UpdateRecipeAsync(data.recipe, data.ingredients);
+            await editModal!.Close();
+            await LoadRecipes();
+        }
+        catch (Exception ex)
+        {
+            editError = ex.Message;
+        }
+    }
+
+    // 🗑️ Delete
+    private async Task OpenDeleteModal(Recipe recipe)
+    {
+        deletingRecipe = recipe;
+        deleteError = "";
+        await deleteModal!.Open();
+    }
+
+    private async Task SubmitDelete()
+    {
+        if (deletingRecipe == null) return;
+        deleteError = "";
+        try
+        {
+            await RecipeService.DeleteRecipeAsync(deletingRecipe.Id);
+            await deleteModal!.Close();
+            await LoadRecipes();
+        }
+        catch (Exception ex)
+        {
+            deleteError = ex.Message;
+        }
+    }
+
+    // 🖼️ Save image to wwwroot/images/recipes/
+    private async Task<string> SaveImageAsync(IBrowserFile file)
+    {
+        var folder = Path.Combine(Env.WebRootPath, "images", "recipes");
+        Directory.CreateDirectory(folder);
+
+        var ext = Path.GetExtension(file.Name);
+        var fileName = $"{Guid.NewGuid()}{ext}";
+        var path = Path.Combine(folder, fileName);
+
+        await using var fs = new FileStream(path, FileMode.Create);
+        await file.OpenReadStream(10 * 1024 * 1024).CopyToAsync(fs);
+
+        return $"/images/recipes/{fileName}";
+    }
+}

@@ -1,0 +1,234 @@
+@page "/ingredients"
+@using NutriDish.Models
+@using NutriDish.Services
+@using NutriDish.Components.UI
+@rendermode InteractiveServer
+@inject IIngredientService IngredientService
+
+<!-- Modals -->
+<IngredientFormModal @ref="addModal"
+                     Id="add-ingredient-modal"
+                     Title="Nouvel ingrédient"
+                     SubmitText="Ajouter"
+                     Ingredient="newIngredient"
+                     ErrorMessage="@addError"
+                     OnSubmit="SubmitAdd" />
+
+<IngredientFormModal @ref="editModal"
+                     Id="edit-ingredient-modal"
+                     Title="Modifier l'ingrédient"
+                     SubmitText="Sauvegarder"
+                     Ingredient="editingIngredient"
+                     ErrorMessage="@editError"
+                     OnSubmit="SubmitEdit" />
+
+<ConfirmDeleteModal @ref="deleteModal"
+                    ItemName="@(deletingIngredient?.Name ?? "")"
+                    ErrorMessage="@deleteError"
+                    OnConfirm="SubmitDelete" />
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="m-0">Gestion des Ingrédients</h3>
+    <button class="btn btn-success" @onclick="OpenAddModal">
+        + Nouvel ingrédient
+    </button>
+</div>
+
+<!-- DataGrid -->
+<RadzenDataGrid Data="@ingredients"
+                TItem="Ingredient"
+                AllowFiltering="true"
+                FilterMode="FilterMode.Simple"
+                AllowSorting="true"
+                AllowPaging="true"
+                PageSize="10"
+                PagerHorizontalAlign="HorizontalAlign.Left"
+                ShowPagingSummary="true"
+                AllowColumnResize="true"
+                AllowAlternatingRows="true"
+                EmptyText="Aucun ingrédient trouvé">
+    <Columns>
+        <RadzenDataGridColumn TItem="Ingredient"
+                              Property="@nameof(Ingredient.Id)"
+                              Title="ID"
+                              Width="70px"
+                              TextAlign="TextAlign.Center"
+                              Filterable="false"
+                              Sortable="false" />
+        <RadzenDataGridColumn TItem="Ingredient"
+                              Property="@nameof(Ingredient.Name)"
+                              Title="Nom" />
+        <RadzenDataGridColumn TItem="Ingredient"
+                              Property="Unit.Name"
+                              Title="Unité"
+                              Width="180px">
+            <Template Context="ingredient">
+                @ingredient.Unit?.Name (@ingredient.Unit?.Abbreviation)
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Ingredient"
+                              Property="@nameof(Ingredient.CaloriesPerUnit)"
+                              Title="Calories"
+                              Width="100px"
+                              TextAlign="TextAlign.Center" />
+        <RadzenDataGridColumn TItem="Ingredient"
+                              Property="@nameof(Ingredient.Proteins)"
+                              Title="Protéines (g)"
+                              Width="120px"
+                              TextAlign="TextAlign.Center" />
+        <RadzenDataGridColumn TItem="Ingredient"
+                              Property="@nameof(Ingredient.Carbs)"
+                              Title="Glucides (g)"
+                              Width="120px"
+                              TextAlign="TextAlign.Center" />
+        <RadzenDataGridColumn TItem="Ingredient"
+                              Property="@nameof(Ingredient.Fats)"
+                              Title="Lipides (g)"
+                              Width="120px"
+                              TextAlign="TextAlign.Center" />
+        <RadzenDataGridColumn TItem="Ingredient"
+                              Title="Actions"
+                              Sortable="false"
+                              Filterable="false"
+                              Width="130px"
+                              TextAlign="TextAlign.Center">
+            <Template Context="ingredient">
+                <button class="btn btn-warning btn-sm me-1"
+                        @onclick="() => OpenEditModal(ingredient)">
+                    ✏️
+                </button>
+                <button class="btn btn-danger btn-sm"
+                        @onclick="() => OpenDeleteModal(ingredient)">
+                    🗑️
+                </button>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    private List<Ingredient> ingredients = new();
+
+    private IngredientFormModal? addModal;
+    private IngredientFormModal? editModal;
+    private ConfirmDeleteModal? deleteModal;
+
+    private Ingredient newIngredient = new();
+    private string addError = "";
+
+    private Ingredient editingIngredient = new();
+    private string editError = "";
+
+    private Ingredient? deletingIngredient;
+    private string deleteError = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadIngredients();
+    }
+
+    private async Task LoadIngredients()
+    {
+        ingredients = await IngredientService.GetAllIngredientsAsync();
+    }
+
+    // ➕ Add
+    private async Task OpenAddModal()
+    {
+        newIngredient = new Ingredient();
+        addError = "";
+        await addModal!.Open();
+    }
+
+    private async Task SubmitAdd()
+    {
+        addError = "";
+        if (string.IsNullOrWhiteSpace(newIngredient.Name))
+        {
+            addError = "Le nom est obligatoire.";
+            return;
+        }
+        if (newIngredient.UnitId == 0)
+        {
+            addError = "Veuillez sélectionner une unité.";
+            return;
+        }
+        try
+        {
+            await IngredientService.AddIngredientAsync(newIngredient);
+            await addModal!.Close();
+            await LoadIngredients();
+        }
+        catch (Exception ex)
+        {
+            addError = ex.Message;
+        }
+    }
+
+    // ✏️ Edit
+    private async Task OpenEditModal(Ingredient ingredient)
+    {
+        editingIngredient = new Ingredient
+        {
+            Id = ingredient.Id,
+            Name = ingredient.Name,
+            CaloriesPerUnit = ingredient.CaloriesPerUnit,
+            Proteins = ingredient.Proteins,
+            Carbs = ingredient.Carbs,
+            Fats = ingredient.Fats,
+            UnitId = ingredient.UnitId
+        };
+        editError = "";
+        await editModal!.Open();
+    }
+
+    private async Task SubmitEdit()
+    {
+        editError = "";
+        if (string.IsNullOrWhiteSpace(editingIngredient.Name))
+        {
+            editError = "Le nom est obligatoire.";
+            return;
+        }
+        if (editingIngredient.UnitId == 0)
+        {
+            editError = "Veuillez sélectionner une unité.";
+            return;
+        }
+        try
+        {
+            await IngredientService.UpdateIngredientAsync(editingIngredient);
+            await editModal!.Close();
+            await LoadIngredients();
+        }
+        catch (Exception ex)
+        {
+            editError = ex.Message;
+        }
+    }
+
+    // 🗑️ Delete
+    private async Task OpenDeleteModal(Ingredient ingredient)
+    {
+        deletingIngredient = ingredient;
+        deleteError = "";
+        await deleteModal!.Open();
+    }
+
+    private async Task SubmitDelete()
+    {
+        if (deletingIngredient == null) return;
+        deleteError = "";
+        try
+        {
+            await IngredientService.DeleteIngredientAsync(deletingIngredient.Id);
+            await deleteModal!.Close();
+            await LoadIngredients();
+        }
+        catch (Exception ex)
+        {
+            deleteError = ex.Message;
+        }
+    }
+}

@@ -1,0 +1,39 @@
+@using NutriDish.Models
+@using NutriDish.Components.UI
+
+<ModalDialog @ref="modal" Id="@Id" Title="@Title">
+    <ChildContent>
+        <div class="mb-3">
+            <label class="form-label">Nom de l'unité</label>
+            <input type="text" class="form-control" @bind="Unit!.Name" placeholder="Ex: Kilogramme" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Abréviation</label>
+            <input type="text" class="form-control" @bind="Unit!.Abbreviation" placeholder="Ex: kg" />
+        </div>
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="alert alert-danger py-2">@ErrorMessage</div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn btn-secondary" @onclick="modal!.Close">Annuler</button>
+        <button class="btn btn-primary" @onclick="HandleSubmit">@SubmitText</button>
+    </FooterContent>
+</ModalDialog>
+
+@code {
+    private ModalDialog? modal;
+
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string SubmitText { get; set; } = "Enregistrer";
+    [Parameter] public Unit? Unit { get; set; }
+    [Parameter] public string ErrorMessage { get; set; } = "";
+    [Parameter] public EventCallback OnSubmit { get; set; }
+
+    public async Task Open() => await modal!.Open();
+    public async Task Close() => await modal!.Close();
+
+    private async Task HandleSubmit() => await OnSubmit.InvokeAsync();
+}

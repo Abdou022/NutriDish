@@ -2,6 +2,7 @@ using NutriDish.Components;
 using NutriDish.Models;
 using NutriDish.Services;
 using Microsoft.EntityFrameworkCore;
+using Radzen;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,8 +19,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 //================================================================================
 
+builder.Services.AddRadzenComponents();
+
+
 // Services
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ICuisineTypeService, CuisineTypeService>();
+builder.Services.AddScoped<IUnitService, UnitService>();
+builder.Services.AddScoped<IIngredientService, IngredientService>();
+builder.Services.AddScoped<IRecipeService, RecipeService>();
 
 var app = builder.Build();
 

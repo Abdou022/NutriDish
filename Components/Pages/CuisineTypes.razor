@@ -1,43 +1,43 @@
-@page "/categories"
+@page "/cuisine-types"
 @using NutriDish.Models
 @using NutriDish.Services
 @using NutriDish.Components.UI
 @rendermode InteractiveServer
-@inject ICategoryService CategoryService
+@inject ICuisineTypeService CuisineTypeService
 
 <!-- Modals -->
-<CategoryFormModal @ref="addModal"
-                   Id="add-category-modal"
-                   Title="Nouvelle catégorie"
-                   SubmitText="Ajouter"
-                   Category="newCategory"
-                   ErrorMessage="@addError"
-                   OnSubmit="SubmitAdd" />
+<CuisineTypeFormModal @ref="addModal"
+                      Id="add-cuisinetype-modal"
+                      Title="Nouveau type de cuisine"
+                      SubmitText="Ajouter"
+                      CuisineType="newCuisineType"
+                      ErrorMessage="@addError"
+                      OnSubmit="SubmitAdd" />
 
-<CategoryFormModal @ref="editModal"
-                   Id="edit-category-modal"
-                   Title="Modifier la catégorie"
-                   SubmitText="Sauvegarder"
-                   Category="editingCategory"
-                   ErrorMessage="@editError"
-                   OnSubmit="SubmitEdit" />
+<CuisineTypeFormModal @ref="editModal"
+                      Id="edit-cuisinetype-modal"
+                      Title="Modifier le type de cuisine"
+                      SubmitText="Sauvegarder"
+                      CuisineType="editingCuisineType"
+                      ErrorMessage="@editError"
+                      OnSubmit="SubmitEdit" />
 
 <ConfirmDeleteModal @ref="deleteModal"
-                    ItemName="@(deletingCategory?.Name ?? "")"
+                    ItemName="@(deletingCuisineType?.Name ?? "")"
                     ErrorMessage="@deleteError"
                     OnConfirm="SubmitDelete" />
 
 <!-- Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="m-0">Gestion des Catégories</h3>
+    <h3 class="m-0">Gestion des Types de Cuisine</h3>
     <button class="btn btn-success" @onclick="OpenAddModal">
-        + Nouvelle catégorie
+        + Nouveau type
     </button>
 </div>
 
 <!-- DataGrid -->
-<RadzenDataGrid Data="@categories"
-                TItem="Category"
+<RadzenDataGrid Data="@cuisineTypes"
+                TItem="CuisineType"
                 AllowFiltering="true"
                 FilterMode="FilterMode.Simple"
                 AllowSorting="true"
@@ -47,31 +47,31 @@
                 ShowPagingSummary="true"
                 AllowColumnResize="true"
                 AllowAlternatingRows="true"
-                EmptyText="Aucune catégorie trouvée">
+                EmptyText="Aucun type de cuisine trouvé">
     <Columns>
-        <RadzenDataGridColumn TItem="Category"
-                              Property="@nameof(Category.Id)"
+        <RadzenDataGridColumn TItem="CuisineType"
+                              Property="@nameof(CuisineType.Id)"
                               Title="ID"
                               Width="80px"
                               TextAlign="TextAlign.Center"
                               Filterable="false"
                               Sortable="false" />
-        <RadzenDataGridColumn TItem="Category"
-                              Property="@nameof(Category.Name)"
-                              Title="Nom de la catégorie" />
-        <RadzenDataGridColumn TItem="Category"
+        <RadzenDataGridColumn TItem="CuisineType"
+                              Property="@nameof(CuisineType.Name)"
+                              Title="Type de cuisine" />
+        <RadzenDataGridColumn TItem="CuisineType"
                               Title="Actions"
                               Sortable="false"
                               Filterable="false"
                               Width="130px"
                               TextAlign="TextAlign.Center">
-            <Template Context="category">
+            <Template Context="cuisineType">
                 <button class="btn btn-warning btn-sm me-1"
-                        @onclick="() => OpenEditModal(category)">
+                        @onclick="() => OpenEditModal(cuisineType)">
                     ✏️
                 </button>
                 <button class="btn btn-danger btn-sm"
-                        @onclick="() => OpenDeleteModal(category)">
+                        @onclick="() => OpenDeleteModal(cuisineType)">
                     🗑️
                 </button>
             </Template>
@@ -80,35 +80,35 @@
 </RadzenDataGrid>
 
 @code {
-    private List<Category> categories = new();
+    private List<CuisineType> cuisineTypes = new();
 
-    private CategoryFormModal? addModal;
-    private CategoryFormModal? editModal;
+    private CuisineTypeFormModal? addModal;
+    private CuisineTypeFormModal? editModal;
     private ConfirmDeleteModal? deleteModal;
 
-    private Category newCategory = new();
+    private CuisineType newCuisineType = new();
     private string addError = "";
 
-    private Category editingCategory = new();
+    private CuisineType editingCuisineType = new();
     private string editError = "";
 
-    private Category? deletingCategory;
+    private CuisineType? deletingCuisineType;
     private string deleteError = "";
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadCategories();
+        await LoadCuisineTypes();
     }
 
-    private async Task LoadCategories()
+    private async Task LoadCuisineTypes()
     {
-        categories = await CategoryService.GetAllCategoriesAsync();
+        cuisineTypes = await CuisineTypeService.GetAllCuisineTypesAsync();
     }
 
     // ➕ Add
     private async Task OpenAddModal()
     {
-        newCategory = new Category();
+        newCuisineType = new CuisineType();
         addError = "";
         await addModal!.Open();
     }
@@ -116,16 +116,16 @@
     private async Task SubmitAdd()
     {
         addError = "";
-        if (string.IsNullOrWhiteSpace(newCategory.Name))
+        if (string.IsNullOrWhiteSpace(newCuisineType.Name))
         {
             addError = "Le nom est obligatoire.";
             return;
         }
         try
         {
-            await CategoryService.AddCategoryAsync(newCategory);
+            await CuisineTypeService.AddCuisineTypeAsync(newCuisineType);
             await addModal!.Close();
-            await LoadCategories();
+            await LoadCuisineTypes();
         }
         catch (Exception ex)
         {
@@ -134,9 +134,9 @@
     }
 
     // ✏️ Edit
-    private async Task OpenEditModal(Category category)
+    private async Task OpenEditModal(CuisineType cuisineType)
     {
-        editingCategory = new Category { Id = category.Id, Name = category.Name };
+        editingCuisineType = new CuisineType { Id = cuisineType.Id, Name = cuisineType.Name };
         editError = "";
         await editModal!.Open();
     }
@@ -144,16 +144,16 @@
     private async Task SubmitEdit()
     {
         editError = "";
-        if (string.IsNullOrWhiteSpace(editingCategory.Name))
+        if (string.IsNullOrWhiteSpace(editingCuisineType.Name))
         {
             editError = "Le nom est obligatoire.";
             return;
         }
         try
         {
-            await CategoryService.UpdateCategoryAsync(editingCategory);
+            await CuisineTypeService.UpdateCuisineTypeAsync(editingCuisineType);
             await editModal!.Close();
-            await LoadCategories();
+            await LoadCuisineTypes();
         }
         catch (Exception ex)
         {
@@ -162,22 +162,22 @@
     }
 
     // 🗑️ Delete
-    private async Task OpenDeleteModal(Category category)
+    private async Task OpenDeleteModal(CuisineType cuisineType)
     {
-        deletingCategory = category;
+        deletingCuisineType = cuisineType;
         deleteError = "";
         await deleteModal!.Open();
     }
 
     private async Task SubmitDelete()
     {
-        if (deletingCategory == null) return;
+        if (deletingCuisineType == null) return;
         deleteError = "";
         try
         {
-            await CategoryService.DeleteCategoryAsync(deletingCategory.Id);
+            await CuisineTypeService.DeleteCuisineTypeAsync(deletingCuisineType.Id);
             await deleteModal!.Close();
-            await LoadCategories();
+            await LoadCuisineTypes();
         }
         catch (Exception ex)
         {

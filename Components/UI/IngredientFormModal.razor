@@ -1,0 +1,87 @@
+@using NutriDish.Models
+@using NutriDish.Components.UI
+@using NutriDish.Services
+@inject IUnitService UnitService
+
+<ModalDialog @ref="modal" Id="@Id" Title="@Title">
+    <ChildContent>
+        <div class="mb-3">
+            <label class="form-label">Nom de l'ingrédient</label>
+            <input type="text" class="form-control"
+                   @bind="Ingredient!.Name"
+                   placeholder="Ex: Farine" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Unité</label>
+            <select class="form-select" @bind="Ingredient!.UnitId">
+                <option value="0">-- Sélectionner une unité --</option>
+                @foreach (var unit in units)
+                {
+                    <option value="@unit.Id">@unit.Name (@unit.Abbreviation)</option>
+                }
+            </select>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Calories / unité</label>
+                <input type="number" class="form-control"
+                       @bind="Ingredient!.CaloriesPerUnit"
+                       min="0" max="1000" step="0.1" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Protéines (g)</label>
+                <input type="number" class="form-control"
+                       @bind="Ingredient!.Proteins"
+                       min="0" max="100" step="0.1" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Glucides (g)</label>
+                <input type="number" class="form-control"
+                       @bind="Ingredient!.Carbs"
+                       min="0" max="100" step="0.1" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Lipides (g)</label>
+                <input type="number" class="form-control"
+                       @bind="Ingredient!.Fats"
+                       min="0" max="100" step="0.1" />
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="alert alert-danger py-2">@ErrorMessage</div>
+        }
+    </ChildContent>
+    <FooterContent>
+        <button class="btn btn-secondary" @onclick="modal!.Close">Annuler</button>
+        <button class="btn btn-primary" @onclick="HandleSubmit">@SubmitText</button>
+    </FooterContent>
+</ModalDialog>
+
+@code {
+    private ModalDialog? modal;
+    private List<Unit> units = new();
+
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string SubmitText { get; set; } = "Enregistrer";
+    [Parameter] public Ingredient? Ingredient { get; set; }
+    [Parameter] public string ErrorMessage { get; set; } = "";
+    [Parameter] public EventCallback OnSubmit { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        units = await UnitService.GetAllUnitsAsync();
+    }
+
+    public async Task Open() => await modal!.Open();
+    public async Task Close() => await modal!.Close();
+
+    private async Task HandleSubmit() => await OnSubmit.InvokeAsync();
+}

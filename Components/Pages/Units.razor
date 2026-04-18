@@ -1,43 +1,43 @@
-@page "/categories"
+@page "/units"
 @using NutriDish.Models
 @using NutriDish.Services
 @using NutriDish.Components.UI
 @rendermode InteractiveServer
-@inject ICategoryService CategoryService
+@inject IUnitService UnitService
 
 <!-- Modals -->
-<CategoryFormModal @ref="addModal"
-                   Id="add-category-modal"
-                   Title="Nouvelle catégorie"
-                   SubmitText="Ajouter"
-                   Category="newCategory"
-                   ErrorMessage="@addError"
-                   OnSubmit="SubmitAdd" />
+<UnitFormModal @ref="addModal"
+               Id="add-unit-modal"
+               Title="Nouvelle unité"
+               SubmitText="Ajouter"
+               Unit="newUnit"
+               ErrorMessage="@addError"
+               OnSubmit="SubmitAdd" />
 
-<CategoryFormModal @ref="editModal"
-                   Id="edit-category-modal"
-                   Title="Modifier la catégorie"
-                   SubmitText="Sauvegarder"
-                   Category="editingCategory"
-                   ErrorMessage="@editError"
-                   OnSubmit="SubmitEdit" />
+<UnitFormModal @ref="editModal"
+               Id="edit-unit-modal"
+               Title="Modifier l'unité"
+               SubmitText="Sauvegarder"
+               Unit="editingUnit"
+               ErrorMessage="@editError"
+               OnSubmit="SubmitEdit" />
 
 <ConfirmDeleteModal @ref="deleteModal"
-                    ItemName="@(deletingCategory?.Name ?? "")"
+                    ItemName="@(deletingUnit?.Name ?? "")"
                     ErrorMessage="@deleteError"
                     OnConfirm="SubmitDelete" />
 
 <!-- Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="m-0">Gestion des Catégories</h3>
+    <h3 class="m-0">Gestion des Unités</h3>
     <button class="btn btn-success" @onclick="OpenAddModal">
-        + Nouvelle catégorie
+        + Nouvelle unité
     </button>
 </div>
 
 <!-- DataGrid -->
-<RadzenDataGrid Data="@categories"
-                TItem="Category"
+<RadzenDataGrid Data="@units"
+                TItem="Unit"
                 AllowFiltering="true"
                 FilterMode="FilterMode.Simple"
                 AllowSorting="true"
@@ -47,31 +47,36 @@
                 ShowPagingSummary="true"
                 AllowColumnResize="true"
                 AllowAlternatingRows="true"
-                EmptyText="Aucune catégorie trouvée">
+                EmptyText="Aucune unité trouvée">
     <Columns>
-        <RadzenDataGridColumn TItem="Category"
-                              Property="@nameof(Category.Id)"
+        <RadzenDataGridColumn TItem="Unit"
+                              Property="@nameof(Unit.Id)"
                               Title="ID"
                               Width="80px"
                               TextAlign="TextAlign.Center"
                               Filterable="false"
                               Sortable="false" />
-        <RadzenDataGridColumn TItem="Category"
-                              Property="@nameof(Category.Name)"
-                              Title="Nom de la catégorie" />
-        <RadzenDataGridColumn TItem="Category"
+        <RadzenDataGridColumn TItem="Unit"
+                              Property="@nameof(Unit.Name)"
+                              Title="Nom" />
+        <RadzenDataGridColumn TItem="Unit"
+                              Property="@nameof(Unit.Abbreviation)"
+                              Title="Abréviation"
+                              Width="130px"
+                              TextAlign="TextAlign.Center" />
+        <RadzenDataGridColumn TItem="Unit"
                               Title="Actions"
                               Sortable="false"
                               Filterable="false"
                               Width="130px"
                               TextAlign="TextAlign.Center">
-            <Template Context="category">
+            <Template Context="unit">
                 <button class="btn btn-warning btn-sm me-1"
-                        @onclick="() => OpenEditModal(category)">
+                        @onclick="() => OpenEditModal(unit)">
                     ✏️
                 </button>
                 <button class="btn btn-danger btn-sm"
-                        @onclick="() => OpenDeleteModal(category)">
+                        @onclick="() => OpenDeleteModal(unit)">
                     🗑️
                 </button>
             </Template>
@@ -80,35 +85,35 @@
 </RadzenDataGrid>
 
 @code {
-    private List<Category> categories = new();
+    private List<Unit> units = new();
 
-    private CategoryFormModal? addModal;
-    private CategoryFormModal? editModal;
+    private UnitFormModal? addModal;
+    private UnitFormModal? editModal;
     private ConfirmDeleteModal? deleteModal;
 
-    private Category newCategory = new();
+    private Unit newUnit = new();
     private string addError = "";
 
-    private Category editingCategory = new();
+    private Unit editingUnit = new();
     private string editError = "";
 
-    private Category? deletingCategory;
+    private Unit? deletingUnit;
     private string deleteError = "";
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadCategories();
+        await LoadUnits();
     }
 
-    private async Task LoadCategories()
+    private async Task LoadUnits()
     {
-        categories = await CategoryService.GetAllCategoriesAsync();
+        units = await UnitService.GetAllUnitsAsync();
     }
 
     // ➕ Add
     private async Task OpenAddModal()
     {
-        newCategory = new Category();
+        newUnit = new Unit();
         addError = "";
         await addModal!.Open();
     }
@@ -116,16 +121,21 @@
     private async Task SubmitAdd()
     {
         addError = "";
-        if (string.IsNullOrWhiteSpace(newCategory.Name))
+        if (string.IsNullOrWhiteSpace(newUnit.Name))
         {
             addError = "Le nom est obligatoire.";
             return;
         }
+        if (string.IsNullOrWhiteSpace(newUnit.Abbreviation))
+        {
+            addError = "L'abréviation est obligatoire.";
+            return;
+        }
         try
         {
-            await CategoryService.AddCategoryAsync(newCategory);
+            await UnitService.AddUnitAsync(newUnit);
             await addModal!.Close();
-            await LoadCategories();
+            await LoadUnits();
         }
         catch (Exception ex)
         {
@@ -134,9 +144,9 @@
     }
 
     // ✏️ Edit
-    private async Task OpenEditModal(Category category)
+    private async Task OpenEditModal(Unit unit)
     {
-        editingCategory = new Category { Id = category.Id, Name = category.Name };
+        editingUnit = new Unit { Id = unit.Id, Name = unit.Name, Abbreviation = unit.Abbreviation };
         editError = "";
         await editModal!.Open();
     }
@@ -144,16 +154,21 @@
     private async Task SubmitEdit()
     {
         editError = "";
-        if (string.IsNullOrWhiteSpace(editingCategory.Name))
+        if (string.IsNullOrWhiteSpace(editingUnit.Name))
         {
             editError = "Le nom est obligatoire.";
             return;
         }
+        if (string.IsNullOrWhiteSpace(editingUnit.Abbreviation))
+        {
+            editError = "L'abréviation est obligatoire.";
+            return;
+        }
         try
         {
-            await CategoryService.UpdateCategoryAsync(editingCategory);
+            await UnitService.UpdateUnitAsync(editingUnit);
             await editModal!.Close();
-            await LoadCategories();
+            await LoadUnits();
         }
         catch (Exception ex)
         {
@@ -162,22 +177,22 @@
     }
 
     // 🗑️ Delete
-    private async Task OpenDeleteModal(Category category)
+    private async Task OpenDeleteModal(Unit unit)
     {
-        deletingCategory = category;
+        deletingUnit = unit;
         deleteError = "";
         await deleteModal!.Open();
     }
 
     private async Task SubmitDelete()
     {
-        if (deletingCategory == null) return;
+        if (deletingUnit == null) return;
         deleteError = "";
         try
         {
-            await CategoryService.DeleteCategoryAsync(deletingCategory.Id);
+            await UnitService.DeleteUnitAsync(deletingUnit.Id);
             await deleteModal!.Close();
-            await LoadCategories();
+            await LoadUnits();
         }
         catch (Exception ex)
         {

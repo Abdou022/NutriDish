@@ -6,7 +6,7 @@ public interface ICategoryService
 {
     Task<List<Category>> GetAllCategoriesAsync();
 
-    Task<(List<Category> Categories, int TotalCount)> GetPagedCategoriesAsync(int pageNumber, int pageSize);
+    // Task<(List<Category> Categories, int TotalCount)> GetPagedCategoriesAsync(int pageNumber, int pageSize);
 
     Task<Category?> GetCategoryByIdAsync(int id);
 
