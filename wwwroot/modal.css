@@ -1,0 +1,38 @@
+dialog {
+        border: none;
+        border-radius: 8px;
+        padding: 0;
+        box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        min-width: 400px;
+    }
+    dialog::backdrop {
+        background: rgba(0, 0, 0, 0.5);
+    }
+    .modal-box {
+        display: flex;
+        flex-direction: column;
+    }
+    .modal-header-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .modal-header-custom h5 { margin: 0; }
+    .btn-close-custom {
+        background: none;
+        border: none;
+        font-size: 1.1rem;
+        cursor: pointer;
+        color: #6c757d;
+    }
+    .btn-close-custom:hover { color: #000; }
+    .modal-body-custom { padding: 1.25rem; }
+    .modal-footer-custom {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 1rem 1.25rem;
+        border-top: 1px solid #dee2e6;
+    }

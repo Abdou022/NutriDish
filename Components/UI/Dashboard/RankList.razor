@@ -1,0 +1,25 @@
+@using NutriDish.Models
+@inject NavigationManager Nav
+
+<div class="table-card">
+    <h3 class="chart-title">@Title</h3>
+    <div class="rank-list">
+        @foreach (var (item, index) in Items.Select((r, i) => (r, i)))
+        {
+            <div class="rank-item"
+                 @onclick='() => Nav.NavigateTo($"/recipes/{item.Recipe.Id}")'>
+                <span class="rank-number rank-@(index + 1)">@(index + 1)</span>
+                <span class="rank-name">@item.Recipe.Name</span>
+                <span class="rank-value @ValueColor">
+                    @Math.Round(item.Calories) kcal
+                </span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public List<(Recipe Recipe, double Calories)> Items { get; set; } = new();
+    [Parameter] public string ValueColor { get; set; } = "";
+}

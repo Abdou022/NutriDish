@@ -1,5 +1,10 @@
 /* ===== NUTRIDISH — GREEN THEME ===== */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+@import 'dashboard.css';
+@import 'recipe-detail.css';
+@import 'recipe-card.css';
+@import 'modal.css';
+
 
 :root {
     --cream:        #f4f8f4;

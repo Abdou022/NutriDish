@@ -1,0 +1,23 @@
+@inject NavigationManager Nav
+
+<div class="kpi-card" @onclick="HandleClick">
+    <div class="kpi-icon" style="background: @Gradient">@Icon</div>
+    <div class="kpi-info">
+        <span class="kpi-value">@Value</span>
+        <span class="kpi-label">@Label</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "";
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public int Value { get; set; }
+    [Parameter] public string Gradient { get; set; } = "linear-gradient(135deg, #2e5f2e, #3d7a3d)";
+    [Parameter] public string NavigateTo { get; set; } = "";
+
+    private void HandleClick()
+    {
+        if (!string.IsNullOrEmpty(NavigateTo))
+            Nav.NavigateTo(NavigateTo);
+    }
+}

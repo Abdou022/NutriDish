@@ -1,0 +1,29 @@
+@inject NavigationManager Nav
+
+<div class="nutrition-card @(Dark ? "dark" : "highlight")"
+     @onclick="HandleClick"
+     style="@(Clickable ? "cursor:pointer" : "")">
+    <h1 class="nutrition-label" style="color: white;">@Label</h1>
+    @if (!string.IsNullOrEmpty(RecipeName))
+    {
+        <span class="nutrition-recipe-name" style="color: rgb(122, 173, 120);">@RecipeName</span>
+    }
+    <span class="nutrition-value @ValueColor">@Math.Round(Value)</span>
+    <span class="nutrition-unit">kcal</span>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string RecipeName { get; set; } = "";
+    [Parameter] public double Value { get; set; }
+    [Parameter] public string ValueColor { get; set; } = "";
+    [Parameter] public bool Dark { get; set; } = false;
+    [Parameter] public bool Clickable { get; set; } = false;
+    [Parameter] public string NavigateTo { get; set; } = "";
+
+    private void HandleClick()
+    {
+        if (Clickable && !string.IsNullOrEmpty(NavigateTo))
+            Nav.NavigateTo(NavigateTo);
+    }
+}
