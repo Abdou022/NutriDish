@@ -1,93 +1,264 @@
 @using NutriDish.Models
 @inject NavigationManager Nav
 
-<div class="card h-100 shadow-sm clickable-card"
-     @onclick="() => GoToDetails()">
-    @if (!string.IsNullOrEmpty(Recipe.ImageUrl))
-    {
-        <img src="@Recipe.ImageUrl" class="card-img-top"
-             style="height:180px; object-fit:cover;" />
-    }
-    else
-    {
-        <div class="d-flex align-items-center justify-content-center"
-             style="height:180px; background:#f5f5f5;">
-            <span style="font-size:2rem;">🍽️</span>
+<div class="recipe-card" @onclick="GoToDetails">
+
+    <!-- Image -->
+    <div class="recipe-card-image">
+        @if (!string.IsNullOrEmpty(Recipe.ImageUrl))
+        {
+            <img src="@Recipe.ImageUrl" alt="@Recipe.Name" />
+        }
+        else
+        {
+            <div class="recipe-card-placeholder">
+                <span>🍽️</span>
+            </div>
+        }
+        <div class="recipe-card-overlay"></div>
+
+        <!-- Calories badge flottant -->
+        <div class="recipe-card-calories">
+            🔥 @Math.Round(CalculateTotalCalories(Recipe)) kcal
         </div>
-    }
 
-    <div class="card-body">
-        <h3 class="card-title">@Recipe.Name</h3>
-
-        <p class="card-text text-muted mb-1">
-            <strong>Catégorie:</strong> @Recipe.Category?.Name
-        </p>
-
-        <p class="card-text text-muted mb-1">
-            <strong>Cuisine:</strong> @Recipe.CuisineType?.Name
-        </p>
-
-        <p class="card-text text-muted mb-2">
-            👥 @Recipe.NumberOfPersons personnes
-        </p>
-
-        <span class="badge bg-success">
-        🔥 @CalculateTotalCalories(Recipe) kcal
-        </span>
+        <!-- Action buttons flottants -->
+        <div class="recipe-card-actions">
+            <button class="rc-btn rc-btn-edit"
+                    @onclick="() => OnEdit.InvokeAsync(Recipe)"
+                    @onclick:stopPropagation="true"
+                    title="Modifier">
+                ✏️
+            </button>
+            <button class="rc-btn rc-btn-delete"
+                    @onclick="() => OnDelete.InvokeAsync(Recipe)"
+                    @onclick:stopPropagation="true"
+                    title="Supprimer">
+                🗑️
+            </button>
+        </div>
     </div>
 
-    <div class="card-footer d-flex justify-content-between">
-        <button class="btn btn-warning btn-sm"
-        @onclick="() => OnEdit.InvokeAsync(Recipe)"
-        @onclick:stopPropagation="true">
-    ✏️
-</button>
+    <!-- Content -->
+    <div class="recipe-card-body">
+        <h3 class="recipe-card-title">@Recipe.Name</h3>
 
-<button class="btn btn-danger btn-sm"
-        @onclick="() => OnDelete.InvokeAsync(Recipe)"
-        @onclick:stopPropagation="true">
-    🗑️
-</button>
+        <div class="recipe-card-tags">
+            <span class="rc-tag rc-tag-category">
+                🍽️ @Recipe.Category?.Name
+            </span>
+            <span class="rc-tag rc-tag-cuisine">
+                🌍 @Recipe.CuisineType?.Name
+            </span>
+        </div>
+
+        <div class="recipe-card-footer">
+            <span class="rc-persons">
+                👥 <strong>@Recipe.NumberOfPersons</strong> pers.
+            </span>
+            <span class="rc-ingredients">
+                🧂 <strong>@(Recipe.RecipeIngredients?.Count ?? 0)</strong> ingr.
+            </span>
+        </div>
     </div>
 </div>
 
 <style>
-    .card {
-    transition: transform 0.3s ease;
-}
-.card:hover {
-    transform: scale(1.03);
-}
-.clickable-card {
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
+    .recipe-card {
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 1px solid #cde0cd;
+        box-shadow: 0 2px 12px rgba(30,63,30,0.07);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
 
-.clickable-card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-}
+    .recipe-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 16px 40px rgba(30,63,30,0.15);
+    }
+
+    /* Image zone */
+    .recipe-card-image {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+        background: #1e3f1e;
+        flex-shrink: 0;
+    }
+
+    .recipe-card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+
+    .recipe-card:hover .recipe-card-image img {
+        transform: scale(1.06);
+    }
+
+    .recipe-card-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #2e5f2e, #1e3f1e);
+        font-size: 3rem;
+    }
+
+    .recipe-card-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            transparent 40%,
+            rgba(15,31,15,0.55) 100%
+        );
+        pointer-events: none;
+    }
+
+    /* Calories badge */
+    .recipe-card-calories {
+        position: absolute;
+        bottom: 10px;
+        left: 12px;
+        background: rgba(15,31,15,0.75);
+        backdrop-filter: blur(6px);
+        color: #c9a84c;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        border: 1px solid rgba(201,168,76,0.3);
+        letter-spacing: 0.03em;
+    }
+
+    /* Action buttons */
+    .recipe-card-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 6px;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .recipe-card:hover .recipe-card-actions {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .rc-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        backdrop-filter: blur(6px);
+        transition: transform 0.15s, background 0.15s;
+    }
+
+    .rc-btn:hover { transform: scale(1.15); }
+
+    .rc-btn-edit {
+        background: rgba(255,193,7,0.85);
+    }
+
+    .rc-btn-delete {
+        background: rgba(220,53,69,0.85);
+    }
+
+    /* Body */
+    .recipe-card-body {
+        padding: 1.1rem 1.25rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        flex: 1;
+    }
+
+    .recipe-card-title {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1a2e1a;
+        margin: 0;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Tags */
+    .recipe-card-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .rc-tag {
+        font-size: 0.7rem;
+        font-weight: 500;
+        padding: 3px 9px;
+        border-radius: 20px;
+        letter-spacing: 0.02em;
+    }
+
+    .rc-tag-category {
+        background: #eef5ee;
+        color: #2e5f2e;
+        border: 1px solid #cde0cd;
+    }
+
+    .rc-tag-cuisine {
+        background: #fdf6e8;
+        color: #7a5c1e;
+        border: 1px solid #e8d5a0;
+    }
+
+    /* Footer */
+    .recipe-card-footer {
+        display: flex;
+        gap: 1rem;
+        margin-top: auto;
+        padding-top: 0.65rem;
+        border-top: 1px dashed #cde0cd;
+    }
+
+    .rc-persons, .rc-ingredients {
+        font-size: 0.8rem;
+        color: #6b8c6b;
+    }
+
+    .rc-persons strong, .rc-ingredients strong {
+        color: #1a2e1a;
+    }
 </style>
 
 @code {
     [Parameter] public Recipe Recipe { get; set; } = default!;
-
     [Parameter] public EventCallback<Recipe> OnEdit { get; set; }
     [Parameter] public EventCallback<Recipe> OnDelete { get; set; }
 
     private double CalculateTotalCalories(Recipe recipe)
     {
-        if (recipe.RecipeIngredients == null)
-            return 0;
-
+        if (recipe.RecipeIngredients == null) return 0;
         return recipe.RecipeIngredients.Sum(ri =>
-            (ri.Ingredient?.CaloriesPerUnit ?? 0) * ri.Quantity
-        );
+            (ri.Ingredient?.CaloriesPerUnit ?? 0) * ri.Quantity);
     }
 
-    private void GoToDetails()
-{
-    Nav.NavigateTo($"/recipes/{Recipe.Id}");
-}        
+    private void GoToDetails() => Nav.NavigateTo($"/recipes/{Recipe.Id}");
 }
-
