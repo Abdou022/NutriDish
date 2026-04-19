@@ -81,7 +81,7 @@
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="Recipe"
                               Property="@nameof(Recipe.Name)"
-                              Title="Nom" />
+                              Title="Nom de recette" />
         <RadzenDataGridColumn TItem="Recipe"
                               Property="Category.Name"
                               Title="Catégorie"
@@ -260,17 +260,21 @@
 
     // 🖼️ Save image to wwwroot/images/recipes/
     private async Task<string> SaveImageAsync(IBrowserFile file)
-    {
-        var folder = Path.Combine(Env.WebRootPath, "images", "recipes");
+{
+    var folder = Path.Combine(Env.WebRootPath, "images", "recipes");
+
+    if (!Directory.Exists(folder))
         Directory.CreateDirectory(folder);
 
-        var ext = Path.GetExtension(file.Name);
-        var fileName = $"{Guid.NewGuid()}{ext}";
-        var path = Path.Combine(folder, fileName);
+    var ext = Path.GetExtension(file.Name);
+    var fileName = $"{Guid.NewGuid()}{ext}";
+    var path = Path.Combine(folder, fileName);
 
-        await using var fs = new FileStream(path, FileMode.Create);
-        await file.OpenReadStream(10 * 1024 * 1024).CopyToAsync(fs);
+    await using var stream = file.OpenReadStream(10 * 1024 * 1024);
+    await using var fs = new FileStream(path, FileMode.Create);
 
-        return $"/images/recipes/{fileName}";
-    }
+    await stream.CopyToAsync(fs);
+
+    return $"/images/recipes/{fileName}";
+}
 }

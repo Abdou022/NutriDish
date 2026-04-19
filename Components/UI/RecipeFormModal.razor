@@ -290,13 +290,17 @@
     }
 
     private async Task HandleImageUpload(InputFileChangeEventArgs e)
-    {
-        selectedImageFile = e.File;
-        var buffer = new byte[e.File.Size];
-        await e.File.OpenReadStream(10 * 1024 * 1024).ReadAsync(buffer);
-        var base64 = Convert.ToBase64String(buffer);
-        imagePreview = $"data:{e.File.ContentType};base64,{base64}";
-    }
+{
+    selectedImageFile = e.File;
+
+    using var stream = e.File.OpenReadStream(5 * 1024 * 1024);
+    using var ms = new MemoryStream();
+
+    await stream.CopyToAsync(ms);
+
+    var base64 = Convert.ToBase64String(ms.ToArray());
+    imagePreview = $"data:{e.File.ContentType};base64,{base64}";
+}
 
     private async Task HandleSubmit()
     {
