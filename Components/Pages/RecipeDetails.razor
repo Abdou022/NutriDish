@@ -30,7 +30,20 @@ else
             <p><strong>Catégorie:</strong> @recipe.Category?.Name</p>
             <p><strong>Cuisine:</strong> @recipe.CuisineType?.Name</p>
 
-            <p><strong>🔥 Calories:</strong> @CalculateTotalCalories(recipe) kcal</p>
+            <div class="d-flex align-items-center gap-2 mb-3">
+    <strong>👥 Personnes:</strong>
+
+    <button class="btn btn-outline-secondary btn-sm"
+            @onclick="DecreasePersons">-</button>
+
+    <span>@currentPersons</span>
+
+    <button class="btn btn-outline-secondary btn-sm"
+            @onclick="IncreasePersons">+</button>
+</div>
+            <p><strong>🔥 Calories totales:</strong> @CalculateTotalCalories(recipe) kcal</p>
+
+<p><strong>⚡ Calories / personne:</strong> @Math.Round(CaloriesPerPerson(recipe), 2) kcal</p>
 
             <hr />
 
@@ -40,7 +53,7 @@ else
                 {
                     <li>
                         @ri.Ingredient?.Name :
-                        @ri.Quantity @ri.Ingredient?.Unit?.Abbreviation
+                        @(ri.Quantity * currentPersons / basePersons) @ri.Ingredient?.Unit?.Abbreviation
                     </li>
                 }
             </ul>
@@ -55,26 +68,53 @@ else
 
 @code {
     [Parameter] public int Id { get; set; }
+    private int basePersons;
+    private int currentPersons;
 
     private Recipe? recipe;
 
     protected override async Task OnInitializedAsync()
     {
         recipe = await RecipeService.GetRecipeByIdAsync(Id);
+
+        if (recipe != null)
+    {
+        basePersons = recipe.NumberOfPersons;
+        currentPersons = recipe.NumberOfPersons;
+    }
     }
 
     private double CalculateTotalCalories(Recipe recipe)
-    {
-        if (recipe.RecipeIngredients == null)
-            return 0;
+{
+    if (recipe.RecipeIngredients == null)
+        return 0;
 
-        return recipe.RecipeIngredients.Sum(ri =>
-            (ri.Ingredient?.CaloriesPerUnit ?? 0) * ri.Quantity
-        );
-    }
+    return recipe.RecipeIngredients.Sum(ri =>
+        (ri.Ingredient?.CaloriesPerUnit ?? 0)
+        * (ri.Quantity * currentPersons / basePersons)
+    );
+}
+
+private double CaloriesPerPerson(Recipe recipe)
+{
+    if (currentPersons == 0) return 0;
+
+    return CalculateTotalCalories(recipe) / currentPersons;
+}
 
     private void GoBack()
     {
         Nav.NavigateTo("/recipes");
     }
+
+    private void IncreasePersons()
+{
+    currentPersons++;
+}
+
+private void DecreasePersons()
+{
+    if (currentPersons > 1)
+        currentPersons--;
+}
 }

@@ -16,6 +16,7 @@ public class CuisineTypeService : ICuisineTypeService
     {
         return await _context.CuisineTypes
             .OrderBy(c => c.Name)
+            .Include(c => c.Recipes) // populate pour le datagrid
             .ToListAsync();
     }
 

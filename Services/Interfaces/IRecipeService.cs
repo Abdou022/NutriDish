@@ -9,4 +9,7 @@ public interface IRecipeService
     Task<Recipe> AddRecipeAsync(Recipe recipe, List<RecipeIngredient> ingredients);
     Task<Recipe?> UpdateRecipeAsync(Recipe recipe, List<RecipeIngredient> ingredients);
     Task<bool> DeleteRecipeAsync(int id);
+    Task<List<Recipe>> GetRecipesByCategoryAsync(int categoryId);
+    Task<List<Recipe>> GetRecipesByCuisineTypeAsync(int cuisineTypeId);
+
 }

@@ -60,12 +60,26 @@
                               Property="@nameof(CuisineType.Name)"
                               Title="Type de cuisine" />
         <RadzenDataGridColumn TItem="CuisineType"
+                      Title="Nb Recettes"
+                      Width="120px"
+                      TextAlign="TextAlign.Center"
+                      Sortable="false"
+                      Filterable="false">
+    <Template Context="cuisineType">
+            @(cuisineType.Recipes?.Count ?? 0)
+    </Template>
+</RadzenDataGridColumn>                              
+        <RadzenDataGridColumn TItem="CuisineType"
                               Title="Actions"
                               Sortable="false"
                               Filterable="false"
-                              Width="130px"
+                              Width="290px"
                               TextAlign="TextAlign.Center">
             <Template Context="cuisineType">
+                <button class="btn btn-primary btn-sm me-1"
+                @onclick="() => GoToCuisineRecipes(cuisineType.Id)">
+            👁️ Voir Recettes
+        </button>
                 <button class="btn btn-warning btn-sm me-1"
                         @onclick="() => OpenEditModal(cuisineType)">
                     ✏️
@@ -94,6 +108,8 @@
 
     private CuisineType? deletingCuisineType;
     private string deleteError = "";
+    [Inject] NavigationManager Nav { get; set; }
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -184,4 +200,10 @@
             deleteError = ex.Message;
         }
     }
+
+
+private void GoToCuisineRecipes(int cuisineTypeId)
+{
+    Nav.NavigateTo($"/recipes/cuisine/{cuisineTypeId}");
+}
 }

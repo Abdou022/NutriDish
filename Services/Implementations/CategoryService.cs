@@ -16,6 +16,7 @@ public class CategoryService : ICategoryService
     {
         return await _context.Categories
             .OrderBy(c => c.Name)
+            .Include(c => c.Recipes)
             .ToListAsync();
     }
 
@@ -107,4 +108,6 @@ public class CategoryService : ICategoryService
             .OrderBy(c => c.Name)
             .ToListAsync();
     }
+
+    
 }

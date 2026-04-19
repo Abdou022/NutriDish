@@ -1,0 +1,196 @@
+@page "/recipes/cuisine/{CuisineTypeId:int}"
+@using NutriDish.Models
+@using NutriDish.Services
+@using NutriDish.Components.UI
+@inject IRecipeService RecipeService
+@inject NavigationManager Nav
+@inject ICuisineTypeService CuisineTypeService
+@rendermode InteractiveServer
+
+
+<RecipeFormModal @ref="editModal" Id="edit-recipe-modal" Title="Modifier la recette" SubmitText="Sauvegarder"
+                 Recipe="editingRecipe" RecipeIngredients="editingIngredients" ErrorMessage="@editError" OnSubmit="SubmitEdit" />
+
+<ConfirmDeleteModal @ref="deleteModal" ItemName="@(deletingRecipe?.Name ?? "")" ErrorMessage="@deleteError"
+                    OnConfirm="SubmitDelete" />
+<h3>Recettes par type de cuisine</h3>
+<h3>Type de cuisine : @cuisineName</h3>
+<button class="btn btn-secondary mb-3" @onclick="GoBack">
+    ⬅️ Retour
+</button>
+
+<div class="input-group mb-3">
+    <span class="input-group-text">🔍</span>
+    <input class="form-control"
+           placeholder="Rechercher une recette..."
+           @bind="searchText"
+           @bind:event="oninput" />
+</div>
+
+@if (recipes == null)
+{
+    <p>Chargement...</p>
+}
+else if (!recipes.Any())
+{
+    <p class="text-muted">Aucune recette 😢</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var recipe in FilteredRecipes)
+        {
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <RecipeCard Recipe="recipe"
+                            OnEdit="OpenEdit"
+                            OnDelete="OpenDelete" />
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int CuisineTypeId { get; set; }
+
+    private List<Recipe> recipes = new();
+    private string cuisineName = "";
+    private string searchText = "";
+    private RecipeFormModal? editModal;
+private ConfirmDeleteModal? deleteModal;
+
+private Recipe editingRecipe = new();
+private List<RecipeIngredient> editingIngredients = new();
+private string editError = "";
+
+private Recipe? deletingRecipe;
+private string deleteError = "";
+[Inject] IWebHostEnvironment Env { get; set; } = default!;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRecipes();
+        var cuisine = await CuisineTypeService.GetCuisineTypeByIdAsync(CuisineTypeId);
+        cuisineName = cuisine?.Name ?? "";
+    }
+
+
+private async Task<string> SaveImageAsync(IBrowserFile file)
+{
+    var folder = Path.Combine(Env.WebRootPath, "images", "recipes");
+
+    if (!Directory.Exists(folder))
+        Directory.CreateDirectory(folder);
+
+    var ext = Path.GetExtension(file.Name);
+    var fileName = $"{Guid.NewGuid()}{ext}";
+    var path = Path.Combine(folder, fileName);
+
+    await using var stream = file.OpenReadStream(10 * 1024 * 1024);
+    await using var fs = new FileStream(path, FileMode.Create);
+
+    await stream.CopyToAsync(fs);
+
+    return $"/images/recipes/{fileName}";
+}
+    private void GoBack()
+    {
+        Nav.NavigateTo("/cuisine-types");
+    }
+
+    private async Task OpenEdit(Recipe recipe)
+{
+    editingRecipe = new Recipe
+    {
+        Id = recipe.Id,
+        Name = recipe.Name,
+        NumberOfPersons = recipe.NumberOfPersons,
+        CookingMethod = recipe.CookingMethod,
+        ImageUrl = recipe.ImageUrl,
+        CategoryId = recipe.CategoryId,
+        CuisineTypeId = recipe.CuisineTypeId
+    };
+
+    editingIngredients = recipe.RecipeIngredients?.Select(ri => new RecipeIngredient
+    {
+        IngredientId = ri.IngredientId,
+        Quantity = ri.Quantity
+    }).ToList() ?? new();
+
+    editError = "";
+    await editModal!.Open();
+}
+
+private async Task SubmitEdit((Recipe recipe, List<RecipeIngredient> ingredients, IBrowserFile? image) data)
+{
+    editError = "";
+
+    if (string.IsNullOrWhiteSpace(data.recipe.Name)) { editError = "Le nom est obligatoire."; return; }
+    if (data.recipe.CategoryId == 0) { editError = "Veuillez choisir une catégorie."; return; }
+    if (data.recipe.CuisineTypeId == 0) { editError = "Veuillez choisir un type de cuisine."; return; }
+    if (string.IsNullOrWhiteSpace(data.recipe.CookingMethod))
+    {
+        editError = "La méthode de préparation est obligatoire.";
+        return;
+    }
+
+    try
+    {
+        if (data.image != null)
+            data.recipe.ImageUrl = await SaveImageAsync(data.image);
+
+        await RecipeService.UpdateRecipeAsync(data.recipe, data.ingredients);
+
+        await editModal!.Close();
+
+        // ✅ reload same filtered list
+        await LoadRecipes();
+    }
+    catch (Exception ex)
+    {
+        editError = ex.Message;
+    }
+}
+
+    private async Task OpenDelete(Recipe recipe)
+{
+    deletingRecipe = recipe;
+    deleteError = "";
+    await deleteModal!.Open();
+}
+
+private async Task SubmitDelete()
+{
+    if (deletingRecipe == null) return;
+
+    deleteError = "";
+
+    try
+    {
+        await RecipeService.DeleteRecipeAsync(deletingRecipe.Id);
+
+        await deleteModal!.Close();
+
+        // ✅ reload filtered data
+        await LoadRecipes();
+    }
+    catch (Exception ex)
+    {
+        deleteError = ex.Message;
+    }
+}
+
+private async Task LoadRecipes()
+{
+    recipes = await RecipeService.GetRecipesByCuisineTypeAsync(CuisineTypeId);
+}
+
+    private List<Recipe> FilteredRecipes =>
+    string.IsNullOrWhiteSpace(searchText)
+        ? recipes
+        : recipes.Where(r =>
+            (r.Name?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (r.Category?.Name?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (r.CuisineType?.Name?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+        ).ToList();
+}

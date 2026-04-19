@@ -117,4 +117,26 @@ public class RecipeService : IRecipeService
             throw new Exception("Impossible de supprimer cette recette");
         }
     }
+
+    public async Task<List<Recipe>> GetRecipesByCategoryAsync(int categoryId)
+{
+    return await _context.Recipes
+        .Where(r => r.CategoryId == categoryId)
+        .Include(r => r.Category)
+        .Include(r => r.CuisineType)
+        .Include(r => r.RecipeIngredients!)
+            .ThenInclude(ri => ri.Ingredient)
+        .ToListAsync();
+}
+
+public async Task<List<Recipe>> GetRecipesByCuisineTypeAsync(int cuisineTypeId)
+{
+    return await _context.Recipes
+        .Where(r => r.CuisineTypeId == cuisineTypeId)
+        .Include(r => r.Category)
+        .Include(r => r.CuisineType)
+        .Include(r => r.RecipeIngredients!)
+            .ThenInclude(ri => ri.Ingredient)
+        .ToListAsync();
+}
 }

@@ -17,4 +17,6 @@ public interface ICategoryService
     Task<bool> DeleteCategoryAsync(int id);
 
     Task<List<Category>> SearchCategoriesAsync(string keyword);
+
+
 }

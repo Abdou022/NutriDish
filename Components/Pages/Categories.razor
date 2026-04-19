@@ -60,12 +60,27 @@
                               Property="@nameof(Category.Name)"
                               Title="Nom de la catégorie" />
         <RadzenDataGridColumn TItem="Category"
+                      Title="Nb Recettes"
+                      Width="120px"
+                      TextAlign="TextAlign.Center"
+                      Sortable="false"
+                      Filterable="false">
+    <Template Context="category">
+        @(category.Recipes?.Count ?? 0)
+    </Template>
+</RadzenDataGridColumn>                              
+        <RadzenDataGridColumn TItem="Category"
                               Title="Actions"
                               Sortable="false"
                               Filterable="false"
-                              Width="130px"
+                              Width="290px"
                               TextAlign="TextAlign.Center">
             <Template Context="category">
+
+                <button class="btn btn-primary btn-sm me-1"
+                @onclick="() => GoToCategoryRecipes(category.Id)">
+            👁️ Voir Recettes
+        </button>
                 <button class="btn btn-warning btn-sm me-1"
                         @onclick="() => OpenEditModal(category)">
                     ✏️
@@ -94,6 +109,9 @@
 
     private Category? deletingCategory;
     private string deleteError = "";
+    [Inject] NavigationManager Nav { get; set; }
+
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -184,4 +202,9 @@
             deleteError = ex.Message;
         }
     }
+
+    private void GoToCategoryRecipes(int categoryId)
+{
+    Nav.NavigateTo($"/recipes/category/{categoryId}");
+}
 }
