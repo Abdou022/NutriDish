@@ -38,25 +38,40 @@ public class RecipeService : IRecipeService
     }
 
     public async Task<Recipe> AddRecipeAsync(Recipe recipe, List<RecipeIngredient> ingredients)
+{
+    var exists = await _context.Recipes
+        .AnyAsync(r => r.Name.ToLower() == recipe.Name.ToLower());
+
+    if (exists)
+        throw new Exception("Une recette avec ce nom existe déjà");
+
+    // Créer une entité propre avec uniquement les IDs, sans objets de navigation
+    var newRecipe = new Recipe
     {
-        var exists = await _context.Recipes
-            .AnyAsync(r => r.Name.ToLower() == recipe.Name.ToLower());
+        Name            = recipe.Name,
+        NumberOfPersons = recipe.NumberOfPersons,
+        CookingMethod   = recipe.CookingMethod,
+        ImageUrl        = recipe.ImageUrl,
+        CategoryId      = recipe.CategoryId,
+        CuisineTypeId   = recipe.CuisineTypeId
+    };
 
-        if (exists)
-            throw new Exception("Une recette avec ce nom existe déjà");
+    _context.Recipes.Add(newRecipe);
+    await _context.SaveChangesAsync();
 
-        _context.Recipes.Add(recipe);
-        await _context.SaveChangesAsync();
-
-        foreach (var ingredient in ingredients)
+    foreach (var ingredient in ingredients)
+    {
+        _context.RecipeIngredients.Add(new RecipeIngredient
         {
-            ingredient.RecipeId = recipe.Id;
-            _context.RecipeIngredients.Add(ingredient);
-        }
-
-        await _context.SaveChangesAsync();
-        return recipe;
+            RecipeId     = newRecipe.Id,
+            IngredientId = ingredient.IngredientId,
+            Quantity     = ingredient.Quantity
+        });
     }
+
+    await _context.SaveChangesAsync();
+    return newRecipe;
+}
 
     public async Task<Recipe?> UpdateRecipeAsync(Recipe recipe, List<RecipeIngredient> ingredients)
     {
