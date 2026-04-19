@@ -8,27 +8,13 @@
 @inject IWebHostEnvironment Env
 
 <!-- Modals -->
-<RecipeFormModal @ref="addModal"
-                 Id="add-recipe-modal"
-                 Title="Nouvelle recette"
-                 SubmitText="Créer"
-                 Recipe="newRecipe"
-                 RecipeIngredients="newIngredients"
-                 ErrorMessage="@addError"
-                 OnSubmit="SubmitAdd" />
+<RecipeFormModal @ref="addModal" Id="add-recipe-modal" Title="Nouvelle recette" SubmitText="Créer" Recipe="newRecipe"
+                 RecipeIngredients="newIngredients" ErrorMessage="@addError" OnSubmit="SubmitAdd" />
 
-<RecipeFormModal @ref="editModal"
-                 Id="edit-recipe-modal"
-                 Title="Modifier la recette"
-                 SubmitText="Sauvegarder"
-                 Recipe="editingRecipe"
-                 RecipeIngredients="editingIngredients"
-                 ErrorMessage="@editError"
-                 OnSubmit="SubmitEdit" />
+<RecipeFormModal @ref="editModal" Id="edit-recipe-modal" Title="Modifier la recette" SubmitText="Sauvegarder"
+                 Recipe="editingRecipe" RecipeIngredients="editingIngredients" ErrorMessage="@editError" OnSubmit="SubmitEdit" />
 
-<ConfirmDeleteModal @ref="deleteModal"
-                    ItemName="@(deletingRecipe?.Name ?? "")"
-                    ErrorMessage="@deleteError"
+<ConfirmDeleteModal @ref="deleteModal" ItemName="@(deletingRecipe?.Name ?? "")" ErrorMessage="@deleteError"
                     OnConfirm="SubmitDelete" />
 
 <!-- Header -->
@@ -39,93 +25,90 @@
     </button>
 </div>
 
+<button class="btn btn-outline-secondary mb-3" @onclick="() => ShowAsCards = !ShowAsCards">
+    🔄 Changer de vue
+</button>
+
 <!-- DataGrid -->
-<RadzenDataGrid Data="@recipes"
-                TItem="Recipe"
-                AllowFiltering="true"
-                FilterMode="FilterMode.Simple"
-                AllowSorting="true"
-                AllowPaging="true"
-                PageSize="10"
-                PagerHorizontalAlign="HorizontalAlign.Left"
-                ShowPagingSummary="true"
-                AllowColumnResize="true"
-                AllowAlternatingRows="true"
-                EmptyText="Aucune recette trouvée">
-    <Columns>
-        <RadzenDataGridColumn TItem="Recipe"
-                              Property="@nameof(Recipe.Id)"
-                              Title="ID"
-                              Width="70px"
-                              TextAlign="TextAlign.Center"
-                              Filterable="false"
-                              Sortable="false" />
-        <RadzenDataGridColumn TItem="Recipe"
-                              Title="Image"
-                              Width="80px"
-                              Sortable="false"
-                              Filterable="false"
-                              TextAlign="TextAlign.Center">
-            <Template Context="recipe">
-                @if (!string.IsNullOrEmpty(recipe.ImageUrl))
-                {
-                    <img src="@recipe.ImageUrl"
-                         alt="@recipe.Name"
-                         style="width:48px;height:48px;object-fit:cover;border-radius:6px;" />
-                }
-                else
-                {
-                    <span style="font-size:1.5rem">🍽️</span>
-                }
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Recipe"
-                              Property="@nameof(Recipe.Name)"
-                              Title="Nom de recette" />
-        <RadzenDataGridColumn TItem="Recipe"
-                              Property="Category.Name"
-                              Title="Catégorie"
-                              Width="130px" />
-        <RadzenDataGridColumn TItem="Recipe"
-                              Property="CuisineType.Name"
-                              Title="Cuisine"
-                              Width="130px" />
-        <RadzenDataGridColumn TItem="Recipe"
-                              Property="@nameof(Recipe.NumberOfPersons)"
-                              Title="Personnes"
-                              Width="100px"
-                              TextAlign="TextAlign.Center" />
-        <RadzenDataGridColumn TItem="Recipe"
-                              Title="Ingrédients"
-                              Width="110px"
-                              Sortable="false"
-                              Filterable="false"
-                              TextAlign="TextAlign.Center">
-            <Template Context="recipe">
-                <span class="badge bg-secondary">
-                    @(recipe.RecipeIngredients?.Count ?? 0) ingrédients
-                </span>
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Recipe"
-                              Title="Actions"
-                              Sortable="false"
-                              Filterable="false"
-                              Width="130px"
-                              TextAlign="TextAlign.Center">
-            <Template Context="recipe">
-                <button class="btn btn-warning btn-sm me-1"
-                        @onclick="() => OpenEditModal(recipe)">
-                    ✏️
-                </button>
-                <button class="btn btn-danger btn-sm"
-                        @onclick="() => OpenDeleteModal(recipe)">
-                    🗑️
-                </button>
-            </Template>
-        </RadzenDataGridColumn>
-    </Columns>
-</RadzenDataGrid>
+@if (ShowAsCards)
+{
+    <input class="form-control mb-3" placeholder="🔍 Rechercher une recette..." @bind="searchText" @bind:event="oninput" />
+
+    <div class="row">
+        @foreach (var recipe in FilteredRecipes)
+        {
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <RecipeCard Recipe="recipe" OnEdit="OpenEditModal" OnDelete="OpenDeleteModal" />
+            </div>
+        }
+    </div>
+
+    @if (!FilteredRecipes.Any())
+    {
+        <p class="text-muted text-center">Aucune recette trouvée 😢</p>
+    }
+}
+else
+{
+    <RadzenDataGrid Data="@recipes" TItem="Recipe" AllowFiltering="true" FilterMode="FilterMode.Simple" AllowSorting="true"
+                    AllowPaging="true" PageSize="10" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                    AllowColumnResize="true" AllowAlternatingRows="true" EmptyText="Aucune recette trouvée">
+        <Columns>
+            <RadzenDataGridColumn TItem="Recipe" Property="@nameof(Recipe.Id)" Title="ID" Width="70px"
+                                  TextAlign="TextAlign.Center" Filterable="false" Sortable="false" />
+            <RadzenDataGridColumn TItem="Recipe" Title="Image" Width="150px" Sortable="false" Filterable="false"
+                                  TextAlign="TextAlign.Center">
+                <Template Context="recipe">
+                    @if (!string.IsNullOrEmpty(recipe.ImageUrl))
+                    {
+                        <img src="@recipe.ImageUrl" alt="@recipe.Name"
+                             style="width:78px;height:68px;object-fit:cover;border-radius:6px;" />
+                    }
+                    else
+                    {
+                        <span style="font-size:1.5rem">🍽️</span>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Recipe" Property="@nameof(Recipe.Name)" Title="Nom" />
+            <RadzenDataGridColumn TItem="Recipe" Property="Category.Name" Title="Catégorie" Width="130px"
+                                  TextAlign="TextAlign.Center" />
+            <RadzenDataGridColumn TItem="Recipe" Property="CuisineType.Name" Title="Cuisine" Width="130px"
+                                  TextAlign="TextAlign.Center" />
+            <RadzenDataGridColumn TItem="Recipe" Property="@nameof(Recipe.NumberOfPersons)" Title="Personnes" Width="180px"
+                                  TextAlign="TextAlign.Center" />
+            <RadzenDataGridColumn TItem="Recipe" Title="Ingrédients" Width="180px" Sortable="false" Filterable="false"
+                                  TextAlign="TextAlign.Center">
+                <Template Context="recipe">
+                    <span class="badge bg-secondary">
+                        @(recipe.RecipeIngredients?.Count ?? 0) ingrédients
+                    </span>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="Recipe" Title="Calories" Width="150px" TextAlign="TextAlign.Center"
+                                  Sortable="false" Filterable="false">
+                <Template Context="recipe">
+                    @Math.Round(CalculateTotalCalories(recipe), 2) kcal
+                </Template>
+            </RadzenDataGridColumn>
+
+
+            <RadzenDataGridColumn Title="Actions" Width="200px">
+                <Template Context="recipe">
+                    <button class="btn btn-warning btn-sm me-1" @onclick="() => OpenEditModal(recipe)">
+                        ✏️
+                    </button>
+
+                    <button class="btn btn-danger btn-sm" @onclick="() => OpenDeleteModal(recipe)">
+                        🗑️
+                    </button>
+                </Template>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+}
 
 @code {
     private List<Recipe> recipes = new();
@@ -144,6 +127,8 @@
 
     private Recipe? deletingRecipe;
     private string deleteError = "";
+    private bool ShowAsCards = false;
+    private string searchText = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -167,16 +152,21 @@
     private async Task SubmitAdd((Recipe recipe, List<RecipeIngredient> ingredients, IBrowserFile? image) data)
     {
         addError = "";
-        if (string.IsNullOrWhiteSpace(data.recipe.Name))     { addError = "Le nom est obligatoire."; return; }
-        if (data.recipe.CategoryId == 0)                      { addError = "Veuillez choisir une catégorie."; return; }
-        if (data.recipe.CuisineTypeId == 0)                   { addError = "Veuillez choisir un type de cuisine."; return; }
-        if (string.IsNullOrWhiteSpace(data.recipe.CookingMethod)) { addError = "La méthode de préparation est obligatoire."; return; }
+        if (string.IsNullOrWhiteSpace(data.recipe.Name)) { addError = "Le nom est obligatoire."; return; }
+        if (data.recipe.CategoryId == 0) { addError = "Veuillez choisir une catégorie."; return; }
+        if (data.recipe.CuisineTypeId == 0) { addError = "Veuillez choisir un type de cuisine."; return; }
+        if (string.IsNullOrWhiteSpace(data.recipe.CookingMethod))
+        {
+            addError = "La méthode de préparation est obligatoire.";
+            return;
+        }
 
         try
         {
             if (data.image != null)
                 data.recipe.ImageUrl = await SaveImageAsync(data.image);
-
+            else
+                data.recipe.ImageUrl = "/images/recipes/default.jpg";
             await RecipeService.AddRecipeAsync(data.recipe, data.ingredients);
             await addModal!.Close();
             await LoadRecipes();
@@ -214,10 +204,14 @@
     private async Task SubmitEdit((Recipe recipe, List<RecipeIngredient> ingredients, IBrowserFile? image) data)
     {
         editError = "";
-        if (string.IsNullOrWhiteSpace(data.recipe.Name))     { editError = "Le nom est obligatoire."; return; }
-        if (data.recipe.CategoryId == 0)                      { editError = "Veuillez choisir une catégorie."; return; }
-        if (data.recipe.CuisineTypeId == 0)                   { editError = "Veuillez choisir un type de cuisine."; return; }
-        if (string.IsNullOrWhiteSpace(data.recipe.CookingMethod)) { editError = "La méthode de préparation est obligatoire."; return; }
+        if (string.IsNullOrWhiteSpace(data.recipe.Name)) { editError = "Le nom est obligatoire."; return; }
+        if (data.recipe.CategoryId == 0) { editError = "Veuillez choisir une catégorie."; return; }
+        if (data.recipe.CuisineTypeId == 0) { editError = "Veuillez choisir un type de cuisine."; return; }
+        if (string.IsNullOrWhiteSpace(data.recipe.CookingMethod))
+        {
+            editError = "La méthode de préparation est obligatoire.";
+            return;
+        }
 
         try
         {
@@ -260,21 +254,40 @@
 
     // 🖼️ Save image to wwwroot/images/recipes/
     private async Task<string> SaveImageAsync(IBrowserFile file)
-{
-    var folder = Path.Combine(Env.WebRootPath, "images", "recipes");
+    {
+        var folder = Path.Combine(Env.WebRootPath, "images", "recipes");
 
-    if (!Directory.Exists(folder))
-        Directory.CreateDirectory(folder);
+        if (!Directory.Exists(folder))
+            Directory.CreateDirectory(folder);
 
-    var ext = Path.GetExtension(file.Name);
-    var fileName = $"{Guid.NewGuid()}{ext}";
-    var path = Path.Combine(folder, fileName);
+        var ext = Path.GetExtension(file.Name);
+        var fileName = $"{Guid.NewGuid()}{ext}";
+        var path = Path.Combine(folder, fileName);
 
-    await using var stream = file.OpenReadStream(10 * 1024 * 1024);
-    await using var fs = new FileStream(path, FileMode.Create);
+        await using var stream = file.OpenReadStream(10 * 1024 * 1024);
+        await using var fs = new FileStream(path, FileMode.Create);
 
-    await stream.CopyToAsync(fs);
+        await stream.CopyToAsync(fs);
 
-    return $"/images/recipes/{fileName}";
-}
+        return $"/images/recipes/{fileName}";
+    }
+
+    private double CalculateTotalCalories(Recipe recipe)
+    {
+        if (recipe.RecipeIngredients == null)
+            return 0;
+
+        return recipe.RecipeIngredients.Sum(ri =>
+            (ri.Ingredient?.CaloriesPerUnit ?? 0) * ri.Quantity
+        );
+    }
+
+    private List<Recipe> FilteredRecipes =>
+        string.IsNullOrWhiteSpace(searchText)
+            ? recipes
+            : recipes.Where(r =>
+                (r.Name?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (r.Category?.Name?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (r.CuisineType?.Name?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)
+            ).ToList();
 }
