@@ -32,7 +32,13 @@
 <!-- DataGrid -->
 @if (ShowAsCards)
 {
-    <input class="form-control mb-3" placeholder="🔍 Rechercher une recette..." @bind="searchText" @bind:event="oninput" />
+    <div class="input-group mb-3">
+    <span class="input-group-text">🔍</span>
+    <input class="form-control"
+           placeholder="Rechercher une recette..."
+           @bind="searchText"
+           @bind:event="oninput" />
+</div>
 
     <div class="row">
         @foreach (var recipe in FilteredRecipes)
