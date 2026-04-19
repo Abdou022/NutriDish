@@ -1,6 +1,8 @@
 @using NutriDish.Models
+@inject NavigationManager Nav
 
-<div class="card h-100 shadow-sm">
+<div class="card h-100 shadow-sm clickable-card"
+     @onclick="() => GoToDetails()">
     @if (!string.IsNullOrEmpty(Recipe.ImageUrl))
     {
         <img src="@Recipe.ImageUrl" class="card-img-top"
@@ -36,14 +38,16 @@
 
     <div class="card-footer d-flex justify-content-between">
         <button class="btn btn-warning btn-sm"
-                @onclick="() => OnEdit.InvokeAsync(Recipe)">
-            ✏️
-        </button>
+        @onclick="() => OnEdit.InvokeAsync(Recipe)"
+        @onclick:stopPropagation="true">
+    ✏️
+</button>
 
-        <button class="btn btn-danger btn-sm"
-                @onclick="() => OnDelete.InvokeAsync(Recipe)">
-            🗑️
-        </button>
+<button class="btn btn-danger btn-sm"
+        @onclick="() => OnDelete.InvokeAsync(Recipe)"
+        @onclick:stopPropagation="true">
+    🗑️
+</button>
     </div>
 </div>
 
@@ -53,6 +57,15 @@
 }
 .card:hover {
     transform: scale(1.03);
+}
+.clickable-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clickable-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 </style>
 
@@ -70,6 +83,11 @@
         return recipe.RecipeIngredients.Sum(ri =>
             (ri.Ingredient?.CaloriesPerUnit ?? 0) * ri.Quantity
         );
-    }        
+    }
+
+    private void GoToDetails()
+{
+    Nav.NavigateTo($"/recipes/{Recipe.Id}");
+}        
 }
 

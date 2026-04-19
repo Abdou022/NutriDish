@@ -1,0 +1,80 @@
+@page "/recipes/{Id:int}"
+@using NutriDish.Models
+@using NutriDish.Services
+@inject IRecipeService RecipeService
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+
+<h3>Détails de la recette</h3>
+
+<button class="btn btn-secondary mb-3" @onclick="GoBack">
+    ⬅️ Retour
+</button>
+
+@if (recipe == null)
+{
+    <p>Chargement...</p>
+}
+else
+{
+    <div class="card shadow-sm">
+        @if (!string.IsNullOrEmpty(recipe.ImageUrl))
+        {
+            <img src="@recipe.ImageUrl" class="card-img-top" style="height:500px; object-fit:cover;" />
+        }
+
+        <div class="card-body">
+            <h3>@recipe.Name</h3>
+
+            <p><strong>Catégorie:</strong> @recipe.Category?.Name</p>
+            <p><strong>Cuisine:</strong> @recipe.CuisineType?.Name</p>
+
+            <p><strong>🔥 Calories:</strong> @CalculateTotalCalories(recipe) kcal</p>
+
+            <hr />
+
+            <h5>Ingrédients</h5>
+            <ul>
+                @foreach (var ri in recipe.RecipeIngredients!)
+                {
+                    <li>
+                        @ri.Ingredient?.Name :
+                        @ri.Quantity @ri.Ingredient?.Unit?.Abbreviation
+                    </li>
+                }
+            </ul>
+
+            <hr />
+
+            <h5>Préparation</h5>
+            <p>@recipe.CookingMethod</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Recipe? recipe;
+
+    protected override async Task OnInitializedAsync()
+    {
+        recipe = await RecipeService.GetRecipeByIdAsync(Id);
+    }
+
+    private double CalculateTotalCalories(Recipe recipe)
+    {
+        if (recipe.RecipeIngredients == null)
+            return 0;
+
+        return recipe.RecipeIngredients.Sum(ri =>
+            (ri.Ingredient?.CaloriesPerUnit ?? 0) * ri.Quantity
+        );
+    }
+
+    private void GoBack()
+    {
+        Nav.NavigateTo("/recipes");
+    }
+}
